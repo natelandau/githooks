@@ -23,7 +23,8 @@ _mainScript_() {
             if [ ! -L "${HOOK_DEST}" ]; then
                 _execute_ -n "ln -s \"${HOOK}\" \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}") installed"
             else
-                info "$(_fileName_ "${HOOK}") already installed"
+                _execute_ "rm \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}"): existing link removed"
+                _execute_ -n "ln -s \"${HOOK}\" \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}"): installed"
             fi
         done < <(find "${GITROOT}/hooks" -type f -name '*.sh')
     else
