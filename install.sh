@@ -20,12 +20,13 @@ _mainScript_() {
     if [[ ${UNINSTALL_HOOKS} == false ]]; then
         while read -r HOOK; do
             HOOK_DEST="${GITROOT}/../.git/hooks/$(_fileBasename_ "${HOOK}")"
-            if [ ! -e "${HOOK_DEST}" ]; then
-                _execute_ -n "ln -s \"${HOOK}\" \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}") installed"
-            else
-                _execute_ "rm \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}"): existing link removed"
-                _execute_ -n "ln -s \"${HOOK}\" \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}"): installed"
+
+            if [ -e "${HOOK_DEST}" ]; then
+                _execute_ "rm -rf \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}"): existing link removed"
             fi
+
+            _execute_ -n "ln -s \"${HOOK}\" \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}"): installed"
+
         done < <(find "${GITROOT}/hooks" -type f -name '*.sh')
     else
         i=0
