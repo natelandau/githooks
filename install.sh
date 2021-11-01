@@ -2,10 +2,14 @@
 
 _mainScript_() {
 
-    if ! GITROOT=$(git rev-parse --show-toplevel 2>/dev/null); then
+    if ! HOOKS_REPO=$(git rev-parse --show-toplevel 2>/dev/null); then
         error "We do not seem to be running in a git repository"
         _safeExit_ 1
     fi
+
+    pushd "${HOOKS_REPO}/../" &>/dev/null
+    PARENT_REPO="$(pwd)"
+    popd &>/dev/null
 
     # Fail if we don't have realpath available in $PATH
     if ! command -v realpath >/dev/null 2>&1; then
@@ -19,24 +23,25 @@ _mainScript_() {
 
     if [[ ${UNINSTALL_HOOKS} == false ]]; then
         while read -r HOOK; do
-            HOOK_DEST="${GITROOT}/../.git/hooks/$(_fileBasename_ "${HOOK}")"
+            HOOK_DEST="${PARENT_REPO}/.git/hooks/$(_fileBasename_ "${HOOK}")"
 
-            if [ -e "${HOOK_DEST}" ]; then
-                _execute_ "rm -rf \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}"): existing link removed"
+            if [ -L "${HOOK_DEST}" ]; then
+                debug "link exists"
+                _execute_ "rm -f \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}"): existing link removed"
             fi
 
             _execute_ -n "ln -s \"${HOOK}\" \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}"): installed"
 
-        done < <(find "${GITROOT}/hooks" -type f -name '*.sh')
+        done < <(find "${HOOKS_REPO}/hooks" -type f -name '*.sh')
     else
         i=0
         while read -r HOOK; do
-            HOOK_DEST="${GITROOT}/../.git/hooks/$(_fileBasename_ "${HOOK}")"
+            HOOK_DEST="${PARENT_REPO}/.git/hooks/$(_fileBasename_ "${HOOK}")"
             if [ -L "${HOOK_DEST}" ]; then
-                _execute_ -n "rm \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}") uninstalled"
+                _execute_ -n "rm -f \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}") uninstalled"
                 ((i = i + 1))
             fi
-        done < <(find "${GITROOT}/hooks" -type f -name '*.sh')
+        done < <(find "${HOOKS_REPO}/hooks" -type f -name '*.sh')
         if [[ ${i} -eq 0 ]]; then
             info "No git hooks found to uninstall"
         fi
@@ -95,6 +100,37 @@ _fileBasename_() {
     _basename="${_file%.*}"
 
     printf "%s" "${_basename}"
+}
+
+_filePath_() {
+    # DESC:
+    #					Finds the directory name from a file path. If it exists on filesystem, print
+    #         absolute path.  If a string, remove the filename and return the path
+    # ARGS:
+    #					$1 (Required) - Input string path
+    # OUTS:
+    #					0 - Success
+    #					1 - Failure
+    #					stdout: Directory path
+    # USAGE:
+    #					_fileDir_ "some/path/to/file.txt" --> "some/path/to"
+    # CREDIT:
+    #         https://github.com/labbots/bash-utility/
+
+    [[ $# == 0 ]] && fatal "Missing required argument to ${FUNCNAME[0]}"
+
+    local _tmp=${1}
+
+    if [ -e "${_tmp}" ]; then
+        _tmp="$(dirname "$(realpath "${_tmp}")")"
+    else
+        [[ ${_tmp} != *[!/]* ]] && { printf '/\n' && return; }
+        _tmp="${_tmp%%"${_tmp##*[!/]}"}"
+
+        [[ ${_tmp} != */* ]] && { printf '.\n' && return; }
+        _tmp=${_tmp%/*} && _tmp="${_tmp%%"${_tmp##*[!/]}"}"
+    fi
+    printf '%s' "${_tmp:-/}"
 }
 
 _execute_() {
