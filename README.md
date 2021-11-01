@@ -25,7 +25,7 @@ Follow these steps to install this repository as a submodule within an existing 
 git submodule add https://github.com/natelandau/githooks ".hooks"
 ```
 
-Note, I've chosen to install this in a directory named '.hooks'. You can choose a different directory name but the install script will need to be updated manually.
+**Note**, I've chosen to install this in a directory named '.hooks'. You can choose a different directory name but the install script will need to be edited or the hooks will need to be manually installed.
 
 **b. Use a symlink**
 
