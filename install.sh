@@ -19,8 +19,8 @@ _mainScript_() {
 
     if [[ ${UNINSTALL_HOOKS} == false ]]; then
         while read -r HOOK; do
-            HOOK_DEST="${GITROOT}/.git/hooks/$(_fileBasename_ "${HOOK}")"
-            if [ ! -L "${HOOK_DEST}" ]; then
+            HOOK_DEST="${GITROOT}/../.git/hooks/$(_fileBasename_ "${HOOK}")"
+            if [ ! -e "${HOOK_DEST}" ]; then
                 _execute_ -n "ln -s \"${HOOK}\" \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}") installed"
             else
                 _execute_ "rm \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}"): existing link removed"
@@ -30,7 +30,7 @@ _mainScript_() {
     else
         i=0
         while read -r HOOK; do
-            HOOK_DEST="${GITROOT}/.git/hooks/$(_fileBasename_ "${HOOK}")"
+            HOOK_DEST="${GITROOT}/../.git/hooks/$(_fileBasename_ "${HOOK}")"
             if [ -L "${HOOK_DEST}" ]; then
                 _execute_ -n "rm \"${HOOK_DEST}\"" "$(_fileName_ "${HOOK}") uninstalled"
                 ((i = i + 1))
