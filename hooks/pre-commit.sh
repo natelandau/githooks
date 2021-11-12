@@ -7,7 +7,6 @@ _mainScript_() {
         _safeExit_ 1
     fi
 
-    _setPATH_ "/usr/local/bin" "${HOME}/bin"
     LOGFILE="${HOME}/logs/$(_fileName_ "${GITROOT}")-$(basename "$0").log"
 
     _gitStopWords_() {
@@ -336,10 +335,6 @@ _mainScript_() {
 # end _mainScript_
 
 # ################################## Flags and defaults
-# Script specific
-STOP_WORD_FILE="${HOME}/.git_stop_words"
-shopt -s nocasematch # Case insensitive matching
-
 # Required variables
 LOGFILE="${HOME}/logs/$(basename "$0").log"
 QUIET=false
@@ -348,6 +343,10 @@ VERBOSE=false
 FORCE=false
 DRYRUN=false
 declare -a ARGS=()
+
+# Script specific
+STOP_WORD_FILE="${HOME}/.git_stop_words"
+shopt -s nocasematch # Case insensitive matching
 
 # ################################## Custom utility functions (Pasted from repository)
 _fileName_() {
@@ -773,11 +772,33 @@ _setPATH_() {
     #         Add directories to $PATH so script can find executables
     # ARGS:
     #         $@ - One or more paths
-    # OUTS:   Adds items to $PATH
+    # OPTS:
+    #         -x - Fail if directories are not found
+    # OUTS:
+    #         0: Success
+    #         1: Failure
+    #         Adds items to $PATH
     # USAGE:
     #         _setPATH_ "/usr/local/bin" "${HOME}/bin" "$(npm bin)"
 
     [[ $# == 0 ]] && fatal "Missing required argument to ${FUNCNAME[0]}"
+
+    local opt
+    local OPTIND=1
+    local _failIfNotFound=false
+
+    while getopts ":xX" opt; do
+        case ${opt} in
+            x | X) _failIfNotFound=true ;;
+            *)
+                {
+                    error "Unrecognized option '${1}' passed to _backupFile_" "${LINENO}"
+                    return 1
+                }
+                ;;
+        esac
+    done
+    shift $((OPTIND - 1))
 
     local _newPath
 
@@ -787,14 +808,17 @@ _setPATH_() {
                 if PATH="${_newPath}:${PATH}"; then
                     debug "Added '${_newPath}' to PATH"
                 else
-                    return 1
+                    debug "'${_newPath}' already in PATH"
                 fi
             else
                 debug "_setPATH_: '${_newPath}' already exists in PATH"
             fi
         else
             debug "_setPATH_: can not find: ${_newPath}"
-            return 0
+            if [[ ${_failIfNotFound} == true ]]; then
+                return 1
+            fi
+            continue
         fi
     done
     return 0
@@ -814,13 +838,41 @@ _useGNUutils_() {
     # NOTES:
     #					GNU utilities can be added to MacOS using Homebrew
 
-    [ ! "$(declare -f "_setPATH_")" ] && fatal "${FUNCNAME[0]} needs function _setPATH_"
+    ! declare -f "_setPATH_" &>/dev/null && fatal "${FUNCNAME[0]} needs function _setPATH_"
 
     if _setPATH_ \
         "/usr/local/opt/gnu-tar/libexec/gnubin" \
         "/usr/local/opt/coreutils/libexec/gnubin" \
         "/usr/local/opt/gnu-sed/libexec/gnubin" \
-        "/usr/local/opt/grep/libexec/gnubin"; then
+        "/usr/local/opt/grep/libexec/gnubin" \
+        "/usr/local/opt/findutils/libexec/gnubin" \
+        "/opt/homebrew/opt/findutils/libexec/gnubin" \
+        "/opt/homebrew/opt/gnu-sed/libexec/gnubin" \
+        "/opt/homebrew/opt/grep/libexec/gnubin" \
+        "/opt/homebrew/opt/coreutils/libexec/gnubin" \
+        "/opt/homebrew/opt/gnu-tar/libexec/gnubin"; then
+        return 0
+    else
+        return 1
+    fi
+
+}
+
+_homebrewPath_() {
+    # DESC:
+    #					Add homebrew bin dir to PATH
+    # ARGS:
+    #					None
+    # OUTS:
+    #					0 if successful
+    #         1 if unsuccessful
+    #         PATH: Adds homebrew bin directory to PATH
+    # USAGE:
+    #					# if ! _homebrewPath_; then exit 1; fi
+
+    ! declare -f "_setPATH_" &>/dev/null && fatal "${FUNCNAME[0]} needs function _setPATH_"
+
+    if _setPATH_ "/usr/local/bin" "/opt/homebrew/bin"; then
         return 0
     else
         return 1
@@ -964,7 +1016,7 @@ set -o pipefail
 # }
 
 # Make `for f in *.txt` work when `*.txt` matches zero files
-shopt -s nullglob globstar
+# shopt -s nullglob globstar
 
 # Set IFS to preferred implementation
 IFS=$' \n\t'
@@ -990,7 +1042,10 @@ _makeTempDir_ "$(basename "$0")"
 # Acquire script lock
 # _acquireScriptLock_
 
-# Source GNU utilities for use on MacOS
+# Add Homebrew bin directory to PATH (MacOS)
+_homebrewPath_
+
+# Source GNU utilities from Homebrew (MacOS)
 _useGNUutils_
 
 # Run the main logic script
