@@ -36,3 +36,17 @@ Clone this repository to your computer and then create a symlink pointing to it 
 Run the `install.sh` script to install these hooks in your repository.
 
 To uninstall them, run `install.sh --remove`
+
+## Scripts
+
+### pre-commit
+
+Lints and tests files prior to being committed to a git repository. Provides the following functionality:
+
+- Ensures **no symlinks are committed**
+- Checks all files for the presences of user-created **stop words** to ensure private information is never committed
+- Lints the following types of files if the required linters are installed
+  - **Shellscripts** (via [shellcheck](https://github.com/koalaman/shellcheck) and [BATS](https://bats-core.readthedocs.io/en/stable/) tests)
+  - **css/scss/less** (via [Stylelint](https://stylelint.io))
+  - **Ansible playbooks** (via [Ansible Lint](https://ansible-lint.readthedocs.io/en/latest/))
+  - **YAML** (via [yaml-lint](https://github.com/adrienverge/yamllint) or [yaml-lint](https://www.npmjs.com/package/yaml-lint))

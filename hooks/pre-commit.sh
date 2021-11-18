@@ -213,6 +213,44 @@ _mainScript_() {
         fi
     }
 
+    _lintCSS_() {
+        # DESC:
+        #					Lints CSS files staged for commit. Requires stylelint to be installed. If a
+        #         config file for stylelint (.stylelintrc) is available at the root level of
+        #         a repository, it will be used
+        # ARGS:
+        #					$1 (Required):	Path to file
+        # OUTS:
+        #					 0:  Success
+        #					 1:  Failure
+        #					stdout:  Errors from Stylint
+        # USAGE:
+        #					_lintCSS_ "@"
+
+        [[ $# == 0 ]] && fatal "Missing required argument to ${FUNCNAME[0]}"
+        local _filename
+        _filename="$(_fileName_ "${1}")"
+
+        if ! command -v stylelint &>/dev/null; then
+            notice "stylelint not intstalled. Continuing..."
+            return 0
+        fi
+
+        if [ -f "$(git rev-parse --show-toplevel)/.stylelintrc" ]; then
+            STYLELINT_COMMAND="stylelint --config $(git rev-parse --show-toplevel)/.stylelintrc"
+        else
+            STYLELINT_COMMAND="stylelint"
+        fi
+
+        debug "${_filename}: Linting CSS..."
+        if ${STYLELINT_COMMAND} "${1}"; then
+            return 0
+        else
+            return 1
+        fi
+
+    }
+
     _lintAnsible_() {
         # DESC:
         #					Lint Ansible YAML files staged for commit.  Requires ansible-lint to be installed.
@@ -325,6 +363,16 @@ _mainScript_() {
                         notice "$(_fileName_ "${STAGED_FILE}"): BATS failed"
                         _safeExit_ 1
                     fi
+                fi
+            fi
+
+            # Lint CSS
+            if [[ ${STAGED_FILE} =~ \.(s?css|less)$ ]]; then
+                if _lintCSS_ "${STAGED_FILE}"; then
+                    info "$(_fileName_ "${STAGED_FILE}"): css lint passed"
+                else
+                    notice "$(_fileName_ "${STAGED_FILE}"): css lint failed"
+                    _safeExit_ 1
                 fi
             fi
         fi
