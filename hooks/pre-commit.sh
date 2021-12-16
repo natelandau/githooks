@@ -307,6 +307,11 @@ _mainScript_() {
 
         if [ -f "${STAGED_FILE}" ]; then
 
+            # Don;t lint binary files
+            if [[ ${STAGED_FILE} =~ \.(jpg|jpeg|gif|png|exe|zip|gzip|tiff|tar|dmg|ttf|otf|m4a|mp3|mkv|mov|avi|eot|svg|woff2?|aac|wav|flac|pdf|doc|xls|ppt|7z|bin|dmg|dat|sql|ico|mpe?g)$ ]]; then
+                continue
+            fi
+
             if _gitStopWords_ "${STAGED_FILE}"; then
                 info "$(_fileName_ "${STAGED_FILE}"): Passed stopwords lint"
             else
