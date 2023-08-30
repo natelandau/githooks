@@ -1,3 +1,7 @@
+# NO LONGER MAINTAINED
+
+I have moved to managing my pre-commit hooks using [pre-commit](https://pre-commit.com/). I recommend you do the same.
+
 # githooks
 
 This repository contains git hooks which will be executed on the client side before certain git actions are completed.
@@ -43,10 +47,10 @@ To uninstall them, run `install.sh --remove`
 
 Lints and tests files prior to being committed to a git repository. Provides the following functionality:
 
-- Ensures **no symlinks are committed**
-- Checks all files for the presences of user-created **stop words** to ensure private information is never committed
-- Lints the following types of files if the required linters are installed
-  - **Shellscripts** (via [shellcheck](https://github.com/koalaman/shellcheck) and [BATS](https://bats-core.readthedocs.io/en/stable/) tests)
-  - **css/scss/less** (via [Stylelint](https://stylelint.io))
-  - **Ansible playbooks** (via [Ansible Lint](https://ansible-lint.readthedocs.io/en/latest/))
-  - **YAML** (via [yaml-lint](https://github.com/adrienverge/yamllint) or [yaml-lint](https://www.npmjs.com/package/yaml-lint))
+-   Ensures **no symlinks are committed**
+-   Checks all files for the presences of user-created **stop words** to ensure private information is never committed
+-   Lints the following types of files if the required linters are installed
+    -   **Shellscripts** (via [shellcheck](https://github.com/koalaman/shellcheck) and [BATS](https://bats-core.readthedocs.io/en/stable/) tests)
+    -   **css/scss/less** (via [Stylelint](https://stylelint.io))
+    -   **Ansible playbooks** (via [Ansible Lint](https://ansible-lint.readthedocs.io/en/latest/))
+    -   **YAML** (via [yaml-lint](https://github.com/adrienverge/yamllint) or [yaml-lint](https://www.npmjs.com/package/yaml-lint))
